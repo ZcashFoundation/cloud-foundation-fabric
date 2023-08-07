@@ -18,3 +18,39 @@ ingress:
     rules:
       - protocol: tcp
         ports: [12345, 12346]
+  ingress-allow-ssh:
+    description: "Allow ssh connections to all instances"
+    # TODO: just allow ssh to specific instances
+    # targets:
+    #   - composer-worker
+    rules:
+      - protocol: tcp
+        ports: [22]
+
+  ingress-allow-zebrad-ports:
+    description: "Allow traffic to Zebra nodes."
+    # TODO: just allow zebra to CD instances, not CI instances
+    # targets:
+    #   - release
+    #   - cd
+    rules:
+      - protocol: tcp
+        ports: [8233, 18233]
+
+allow-all-ssh: # descriptive name, naming convention is adjusted by the module
+  allow:  # `allow` or `deny`
+  - ports: ['22'] # ports for a specific protocol, keep empty list `[]` for all ports
+    protocol: tcp # protocol, put `all` for any protocol
+  direction: INGRESS # EGRESS or INGRESS
+  disabled: true # `false` or `true`, FW rule is disabled when `true`, default value is `false`
+  source_ranges: # list of source ranges, should be specified only for `INGRESS` rule
+  - 0.0.0.0/0
+
+allow-zebrad-ports: # descriptive name, naming convention is adjusted by the module
+  allow:  # `allow` or `deny`
+  - ports: ['8233', '18233'] 
+    protocol: tcp # protocol, put `all` for any protocol
+  direction: INGRESS # EGRESS or INGRESS
+  disabled: false
+  source_ranges: # list of source ranges, should be specified only for `INGRESS` rule
+  - 0.0.0.0/0

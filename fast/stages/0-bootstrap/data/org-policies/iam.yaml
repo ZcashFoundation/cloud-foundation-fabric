@@ -16,4 +16,9 @@ iam.disableServiceAccountKeyCreation:
 
 iam.disableServiceAccountKeyUpload:
   rules:
-    - enforce: true
+  - enforce: true
+
+iam.allowServiceAccountCredentialLifetimeExtension:
+  rules:
+    - allow:
+        all: true
