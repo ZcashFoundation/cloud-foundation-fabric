@@ -40,8 +40,7 @@ module "zebra_caching_artifact_registry" {
   source      = "../../../../modules/artifact-registry"
   project_id  = "zfnd-dev-zebra"
   location    = "us"
-  format      = "DOCKER"
-  id          = "zebra"
+  name          = "zebra"
   description = "Docker repository storing the Zebra application for testing purposes"
   iam = {
     "roles/artifactregistry.reader" = ["allUsers"]
@@ -52,8 +51,7 @@ module "zebra_artifact_registry" {
   source      = "../../../../modules/artifact-registry"
   project_id  = "zfnd-dev-zebra"
   location    = "us"
-  format      = "DOCKER"
-  id          = "zebra-caching"
+  name          = "zebra-caching"
   description = "Docker repository storing Zebra's build layers for caching"
   iam = {
     "roles/artifactregistry.reader" = ["allUsers"]
@@ -64,8 +62,7 @@ module "lwd_caching_artifact_registry" {
   source      = "../../../../modules/artifact-registry"
   project_id  = "zfnd-dev-zebra"
   location    = "us"
-  format      = "DOCKER"
-  id          = "lightwalletd"
+  name          = "lightwalletd"
   description = "Docker repository storing the Zebra application for testing purposes"
   iam = {
     "roles/artifactregistry.reader" = ["allUsers"]
@@ -76,8 +73,7 @@ module "lwd_artifact_registry" {
   source      = "../../../../modules/artifact-registry"
   project_id  = "zfnd-dev-zebra"
   location    = "us"
-  format      = "DOCKER"
-  id          = "lightwalletd-caching"
+  name          = "lightwalletd-caching"
   description = "Docker repository storing Zebra's build layers for caching"
   iam = {
     "roles/artifactregistry.reader" = ["allUsers"]
@@ -104,19 +100,3 @@ resource "google_compute_health_check" "http-health-check" {
   }
 }
 
-module "runner-mig-dind" {
-  source         = "github.com/terraform-google-modules/terraform-google-github-actions-runners?ref=v3.1.1//modules/gh-runner-mig-container-vm"
-  create_network = true
-  subnetwork_project = var.subnetwork_project
-  subnet_name    = var.subnet_name
-  subnet_ip     = var.subnet_ip
-  service_account = null
-  project_id     = var.project_id
-  image          = var.image
-  repo_name      = var.repo_name
-  repo_url       = var.repo_url
-  repo_owner     = var.repo_owner
-  gh_token       = var.gh_token
-  region         = var.region
-  dind           = true
-}

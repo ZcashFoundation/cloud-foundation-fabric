@@ -97,7 +97,7 @@ service_accounts:
 services:
   - artifactregistry.googleapis.com
   - compute.googleapis.com
-  - clouddebugger.googleapis.com
+  # - clouddebugger.googleapis.com # Deprecated API
   - clouderrorreporting.googleapis.com
   - cloudresourcemanager.googleapis.com
   - containeranalysis.googleapis.com
