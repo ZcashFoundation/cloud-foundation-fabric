@@ -1,0 +1,110 @@
+# skip boilerplate check
+
+# [opt] Billing alerts config - overrides default if set
+billing_alert:
+  amount: 5000
+  thresholds:
+    current:
+      - 0.8
+      - 1.0
+    forecasted: []
+  credit_treatment: INCLUDE_ALL_CREDITS
+
+# [opt] DNS zones to be created as children of the environment_dns_zone defined in defaults
+dns_zones: []
+
+# [opt] Contacts for billing alerts and important notifications
+essential_contacts:
+  - devops@zfnd.org
+
+# Folder the project will be created as children of
+folder_id: folders/516886086110
+
+# [opt] Authoritative IAM bindings in group => [roles] format
+group_iam:
+  engineers@zfnd.org:
+    - roles/viewer
+
+# [opt] Authoritative IAM bindings in role => [principals] format
+# Generally used to grant roles to service accounts external to the project
+iam:
+  roles/iam.workloadIdentityUser:
+    - principalSet://iam.googleapis.com/projects/771011584009/locations/global/workloadIdentityPools/zfnd-bootstrap/*
+  # roles/editor:
+  #   - serviceAccount:1059680692020@cloudservices.gserviceaccount.com
+
+# [opt] Service robots and keys they will be assigned as cryptoKeyEncrypterDecrypter
+# in service => [keys] format
+# kms_service_agents:
+#   compute: [key1, key2]
+#   storage: [key1, key2]
+
+# [opt] Labels for the project - merged with the ones defined in defaults
+labels:
+  environment: prod
+  application: zebra
+  firebase: enabled
+
+# [opt] Org policy overrides defined at project level
+org_policies:
+  iam.allowedPolicyMemberDomains:
+    rules:
+    - allow:
+        all: true
+
+# [opt] Service account to create for the project and their roles on the project
+# in name => [roles] format
+service_accounts:
+  instance-deployer:
+    - roles/compute.instanceAdmin
+    - roles/compute.storageAdmin
+    - roles/compute.loadBalancerAdmin
+    - roles/errorreporting.user
+    - roles/logging.logWriter
+    - roles/monitoring.metricWriter
+    - roles/artifactregistry.reader
+    - roles/iam.serviceAccountUser
+    - roles/iam.workloadIdentityUser
+  documentation-publisher:
+    - roles/firebasehosting.admin
+
+# [opt] APIs to enable on the project.
+services:
+  # - artifactregistry.googleapis.com
+  - compute.googleapis.com
+  - clouderrorreporting.googleapis.com
+  - cloudresourcemanager.googleapis.com
+  - containeranalysis.googleapis.com
+  - firebase.googleapis.com
+  - iap.googleapis.com
+  - logging.googleapis.com
+  - monitoring.googleapis.com
+  - osconfig.googleapis.com
+  - networkmanagement.googleapis.com
+  - serviceusage.googleapis.com
+  - stackdriver.googleapis.com
+  - storage.googleapis.com
+
+
+# [opt] Roles to assign to the service identities in service => [roles] format
+service_identities_iam:
+  compute:
+    - roles/storage.objectViewer
+
+  # [opt] VPC setup.
+  # If set enables the `compute.googleapis.com` service and configures
+  # service project attachment
+
+vpc:
+  # [opt] If set, enables the container API
+  gke_setup: null
+
+  # Host project the project will be service project of
+  host_project: zfnd-prod-net-spoke-0
+
+  # [opt] Subnets in the host project where principals will be granted networkUser
+  # in region/subnet-name => [principals]
+  subnets_iam:
+    us-east1/prod-default-ue1:
+      # - user:gustavo@zfnd.org
+      - serviceAccount:instance-deployer@zfnd-prod-zebra.iam.gserviceaccount.com

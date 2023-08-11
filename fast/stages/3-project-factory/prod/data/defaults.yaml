@@ -1,0 +1,23 @@
+# skip boilerplate check
+
+billing_account_id: 01EBC4-8CD936-3108EA
+
+# [opt] Setup for billing alerts
+billing_alert:
+  amount: 1000
+  thresholds:
+    current: [0.5, 0.8]
+    forecasted: [1.2, 1.5]
+  credit_treatment: INCLUDE_ALL_CREDITS
+
+# [opt] Contacts for billing alerts and important notifications
+essential_contacts: ["admin@zfnd.org"]
+
+# [opt] Labels set for all projects
+labels:
+  environment: prod
+  department: engineering
+
+
+# [opt] Additional notification channels for billing
+notification_channels: []
