@@ -68,7 +68,7 @@ service_accounts:
 
 # [opt] APIs to enable on the project.
 services:
-  # - artifactregistry.googleapis.com
+  - artifactregistry.googleapis.com
   - compute.googleapis.com
   # - clouddebugger.googleapis.com
   - clouderrorreporting.googleapis.com
