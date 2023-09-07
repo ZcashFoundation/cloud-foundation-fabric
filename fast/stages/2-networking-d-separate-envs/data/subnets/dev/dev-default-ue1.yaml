@@ -2,5 +2,8 @@
 
 name: dev-default
 region: us-east1
-ip_cidr_range: 10.128.32.0/24
+ip_cidr_range: 10.127.48.0/24
 description: Default subnet for dev
+secondary_ip_ranges:
+   pods: 100.64.0.0/16
+   services: 100.64.0.0/16
