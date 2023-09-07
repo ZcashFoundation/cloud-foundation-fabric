@@ -20,7 +20,7 @@ module "gke-multitenant" {
   source             = "../../../../blueprints/gke/multitenant-fleet"
   billing_account_id = var.billing_account.id
   folder_id          = var.folder_ids.gke-dev
-  project_id         = "gke-0"
+  project_id         = "shared-gke"
   iam_by_principals  = var.iam_by_principals
   iam                = var.iam
   labels             = merge(var.labels, { environment = "dev" })
