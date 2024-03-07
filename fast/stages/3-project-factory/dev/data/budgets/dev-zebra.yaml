@@ -1,0 +1,16 @@
+display_name: 5000 dollars in current spend
+amount:
+  units: 5000
+filter:
+  period:
+    calendar: MONTH
+  resource_ancestors:
+  - folders/319341746722
+threshold_rules:
+- percent: 0.9
+- percent: 1.0
+update_rules:
+  default:
+    disable_default_iam_recipients: true
+    monitoring_notification_channels:
+    - billing-admins

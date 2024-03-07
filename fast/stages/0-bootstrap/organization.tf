@@ -124,6 +124,10 @@ import {
       "sql.restrictAuthorizedNetworks",
       "sql.restrictPublicIp",
       "storage.uniformBucketLevelAccess",
+      "compute.disableGuestAttributesAccess",
+      "iam.allowServiceAccountCredentialLifetimeExtension",
+      "compute.restrictLoadBalancerCreationForTypes",
+      "run.allowedIngress",
     ])
   )
   id = "organizations/${var.organization.id}/policies/${each.key}"
