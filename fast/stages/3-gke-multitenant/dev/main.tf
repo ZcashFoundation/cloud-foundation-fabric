@@ -37,3 +37,5 @@ module "gke-multitenant" {
   fleet_features                   = var.fleet_features
   fleet_workload_identity          = var.fleet_workload_identity
 }
+
+data "google_client_config" "current" {}

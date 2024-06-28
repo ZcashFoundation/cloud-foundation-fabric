@@ -270,3 +270,8 @@ variable "vpc_self_links" {
     dev-spoke-0 = string
   })
 }
+
+variable "github_token" {
+  description = "GitHub token for the GitHub Actions runner."
+  type        = string
+}
