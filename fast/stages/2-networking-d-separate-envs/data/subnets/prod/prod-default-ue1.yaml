@@ -4,3 +4,6 @@ name: prod-default
 region: us-east1
 ip_cidr_range: 10.128.64.0/24
 description: Default subnet for prod
+secondary_ip_ranges:
+   pods: 100.0.0.0/14
+   services: 100.4.0.0/19

@@ -16,41 +16,86 @@
 
 # tfdoc:file:description Project factory.
 
-
-locals {
-  _defaults = yamldecode(file(var.defaults_file))
-  _defaults_net = {
-    billing_account_id   = var.billing_account.id
-    environment_dns_zone = var.environment_dns_zone
-    shared_vpc_self_link = try(var.vpc_self_links["prod-spoke-0"], null)
-    vpc_host_project     = try(var.host_project_ids["prod-spoke-0"], null)
+module "projects" {
+  source = "../../../../modules/project-factory"
+  data_defaults = {
+    billing_account = var.billing_account.id
+    # more defaults are available, check the project factory variables
   }
-  defaults = merge(local._defaults, local._defaults_net)
-  projects = {
-    for f in fileset("${var.data_dir}", "**/*.yaml") :
-    trimsuffix(f, ".yaml") => yamldecode(file("${var.data_dir}/${f}"))
+  data_merges = {
+    labels = {
+      environment = "prod"
+    }
+    services = [
+      "stackdriver.googleapis.com"
+    ]
+  }
+  data_overrides = {
+    prefix = var.prefix
+  }
+  factories_config = var.factories_config
+}
+
+module "zebra_caching_artifact_registry" {
+  source      = "../../../../modules/artifact-registry"
+  project_id  = "zfnd-dev-zebra"
+  location    = "us"
+  name          = "zebra"
+  description = "Docker repository storing the Zebra application for testing purposes"
+  iam = {
+    "roles/artifactregistry.reader" = ["allUsers"]
   }
 }
 
-module "projects" {
-  source                 = "../../../../blueprints/factories/project-factory"
-  for_each               = local.projects
-  defaults               = local.defaults
-  project_id             = each.key
-  billing_account_id     = try(each.value.billing_account_id, null)
-  billing_alert          = try(each.value.billing_alert, null)
-  dns_zones              = try(each.value.dns_zones, [])
-  essential_contacts     = try(each.value.essential_contacts, [])
-  folder_id              = try(each.value.folder_id, local.defaults.folder_id)
-  group_iam              = try(each.value.group_iam, {})
-  iam                    = try(each.value.iam, {})
-  kms_service_agents     = try(each.value.kms, {})
-  labels                 = try(each.value.labels, {})
-  org_policies           = try(each.value.org_policies, null)
-  prefix                 = var.prefix
-  service_accounts       = try(each.value.service_accounts, {})
-  service_accounts_iam   = try(each.value.service_accounts_iam, {})
-  services               = try(each.value.services, [])
-  service_identities_iam = try(each.value.service_identities_iam, {})
-  vpc                    = try(each.value.vpc, null)
+module "zebra_artifact_registry" {
+  source      = "../../../../modules/artifact-registry"
+  project_id  = "zfnd-dev-zebra"
+  location    = "us"
+  name          = "zebra-caching"
+  description = "Docker repository storing Zebra's build layers for caching"
+  iam = {
+    "roles/artifactregistry.reader" = ["allUsers"]
+  }
+}
+
+module "lwd_caching_artifact_registry" {
+  source      = "../../../../modules/artifact-registry"
+  project_id  = "zfnd-dev-zebra"
+  location    = "us"
+  name          = "lightwalletd"
+  description = "Docker repository storing the Zebra application for testing purposes"
+  iam = {
+    "roles/artifactregistry.reader" = ["allUsers"]
+  }
+}
+
+module "lwd_artifact_registry" {
+  source      = "../../../../modules/artifact-registry"
+  project_id  = "zfnd-dev-zebra"
+  location    = "us"
+  name          = "lightwalletd-caching"
+  description = "Docker repository storing Zebra's build layers for caching"
+  iam = {
+    "roles/artifactregistry.reader" = ["allUsers"]
+  }
+}
+
+resource "google_compute_health_check" "http-health-check" {
+  name        = "zebrad-tracing-filter"
+  description = "Health check via http"
+  project     = "zfnd-dev-zebra"
+
+  timeout_sec         = 10
+  check_interval_sec  = 30
+  healthy_threshold   = 2
+  unhealthy_threshold = 3
+
+  http_health_check {
+    port               = "3000"
+    port_specification = "USE_FIXED_PORT"
+    request_path       = "/filter"
+    proxy_header       = "NONE"
+    # TODO: we should validate a specific response, not ANY response
+    # response           = "I AM HEALTHY"
+  }
 }

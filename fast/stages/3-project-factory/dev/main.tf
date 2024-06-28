@@ -99,4 +99,3 @@ resource "google_compute_health_check" "http-health-check" {
     # response           = "I AM HEALTHY"
   }
 }
-
