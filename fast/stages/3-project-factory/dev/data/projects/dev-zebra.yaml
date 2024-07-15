@@ -141,7 +141,6 @@ shared_vpc_service_config:
     - container-engine
   network_subnet_users:
     us-east1/dev-default-ue1:
-    - user:gustavo@zfnd.org
     - serviceAccount:instance-deployer@zfnd-dev-zebra.iam.gserviceaccount.com
     - serviceAccount:1059680692020-compute@developer.gserviceaccount.com
     - serviceAccount:service-1059680692020@serverless-robot-prod.iam.gserviceaccount.com
