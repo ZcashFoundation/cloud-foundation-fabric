@@ -51,3 +51,10 @@ variable "prefix" {
     error_message = "Use a maximum of 9 characters for prefix."
   }
 }
+variable "vpc_self_links" {
+  # tfdoc:variable:source 2-networking
+  description = "Self link for the shared VPC."
+  type = object({
+    dev-spoke-0 = string
+  })
+}
