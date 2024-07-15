@@ -51,3 +51,10 @@ variable "prefix" {
     error_message = "Use a maximum of 9 characters for prefix."
   }
 }
+
+variable "vpc_self_links" {
+  description = "Self link for the shared VPC."
+  type = object({
+    prod-spoke-0 = string
+  })
+}
