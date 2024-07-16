@@ -57,14 +57,14 @@ variable "region" {
 variable "router_config" {
   description = "Cloud Router configuration for the VPN. If you want to reuse an existing router, set create to false and use name to specify the desired router."
   type = object({
-    create    = optional(bool, true)
-    asn       = number
-    name      = optional(string)
-    keepalive = optional(number)
+    asn    = number
+    create = optional(bool, true)
     custom_advertise = optional(object({
       all_subnets = bool
       ip_ranges   = map(string)
     }))
+    keepalive = optional(number)
+    name      = optional(string)
   })
   nullable = false
 }
@@ -77,10 +77,12 @@ variable "tunnels" {
       asn            = number
       route_priority = optional(number, 1000)
       custom_advertise = optional(object({
-        all_subnets          = bool
-        all_vpc_subnets      = bool
-        all_peer_vpc_subnets = bool
-        ip_ranges            = map(string)
+        all_subnets = bool
+        ip_ranges   = map(string)
+      }))
+      md5_authentication_key = optional(object({
+        name = string
+        key  = string
       }))
       ipv6 = optional(object({
         nexthop_address      = optional(string)

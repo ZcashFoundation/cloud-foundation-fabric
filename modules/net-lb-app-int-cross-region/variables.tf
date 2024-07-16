@@ -39,7 +39,7 @@ variable "group_configs" {
 }
 
 variable "https_proxy_config" {
-  description = "HTTPS proxy connfiguration."
+  description = "HTTPS proxy configuration."
   type = object({
     certificate_manager_certificates = optional(list(string), [])
     quic_override                    = optional(string)
@@ -124,13 +124,6 @@ variable "neg_configs" {
     ])
     error_message = "Cloud Run negs need either target type or target urlmask defined."
   }
-}
-
-variable "network_tier_premium" {
-  description = "Use premium network tier. Defaults to true."
-  type        = bool
-  default     = true
-  nullable    = false
 }
 
 variable "ports" {

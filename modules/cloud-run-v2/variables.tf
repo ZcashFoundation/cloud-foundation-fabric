@@ -80,6 +80,12 @@ variable "create_job" {
   default     = false
 }
 
+variable "encryption_key" {
+  description = "The full resource name of the Cloud KMS CryptoKey."
+  type        = string
+  default     = null
+}
+
 variable "eventarc_triggers" {
   description = "Event arc triggers for different sources."
   type = object({
@@ -206,6 +212,13 @@ variable "service_account_create" {
   description = "Auto-create service account."
   type        = bool
   default     = false
+}
+
+variable "tag_bindings" {
+  description = "Tag bindings for this service, in key => tag value id format."
+  type        = map(string)
+  nullable    = false
+  default     = {}
 }
 
 variable "volumes" {

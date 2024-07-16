@@ -36,10 +36,18 @@ locals {
   output_kms_keys = { for k in local._output_kms_keys : k.key => k.id }
   tfvars = {
     kms_keys = local.output_kms_keys
+    vpc_sc = {
+      perimeters = {
+        for k, v in try(module.vpc-sc[0].service_perimeters_regular, {}) :
+        k => v.id
+      }
+      perimeters_bridge = {
+        for k, v in try(module.vpc-sc[0].service_perimeters_bridge, {}) :
+        k => v.id
+      }
+    }
   }
 }
-
-# generate files for subsequent stages
 
 resource "local_file" "tfvars" {
   for_each        = var.outputs_location == null ? {} : { 1 = 1 }
@@ -54,25 +62,19 @@ resource "google_storage_bucket_object" "tfvars" {
   content = jsonencode(local.tfvars)
 }
 
-# outputs
-
 output "kms_keys" {
   description = "KMS key ids."
   value       = local.output_kms_keys
 }
 
-output "stage_perimeter_projects" {
-  description = "Security project numbers. They can be added to perimeter resources."
-  value = {
-    dev  = ["projects/${module.dev-sec-project.number}"]
-    prod = ["projects/${module.prod-sec-project.number}"]
-  }
-}
-
-# ready to use variable values for subsequent stages
-
 output "tfvars" {
   description = "Terraform variable files for the following stages."
   sensitive   = true
   value       = local.tfvars
+}
+
+output "vpc_sc_perimeter_default" {
+  description = "Raw default perimeter resource."
+  sensitive   = true
+  value       = try(module.vpc-sc[0].service_perimeters_regular["default"], null)
 }

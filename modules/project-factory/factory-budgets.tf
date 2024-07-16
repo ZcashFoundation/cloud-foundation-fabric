@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+# tfdoc:file:description Billing budget factory locals.
+
 locals {
   # reimplement the billing account factory here to interpolate projects
   _budget_path = try(pathexpand(var.factories_config.budgets.budgets_data_path), null)
@@ -49,7 +51,7 @@ locals {
           try(v.projects, []),
           [
             for p in lookup(local.project_budgets, k, []) :
-            "projects/${module.projects[p].project_id}"
+            "projects/${module.projects[p].number}"
           ]
         )
         resource_ancestors = try(v.filter.resource_ancestors, null)

@@ -1,5 +1,5 @@
 /**
- * Copyright 2023 Google LLC
+ * Copyright 2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+# tfdoc:file:description Projects factory locals.
+
 locals {
+  _hierarchy_projects = (
+    {
+      for f in try(fileset(local._folders_path, "**/*.yaml"), []) :
+      basename(trimsuffix(f, ".yaml")) => merge(
+        { parent = dirname(f) },
+        yamldecode(file("${local._folders_path}/${f}"))
+      )
+      if !endswith(f, "/_config.yaml")
+    }
+  )
   _project_path = try(pathexpand(var.factories_config.projects_data_path), null)
-  _projects = (
+  _projects = merge(
     {
       for f in try(fileset(local._project_path, "**/*.yaml"), []) :
       trimsuffix(f, ".yaml") => yamldecode(file("${local._project_path}/${f}"))
-    }
+    },
+    local._hierarchy_projects
   )
   _project_budgets = flatten([
     for k, v in local._projects : [
       for b in try(v.billing_budgets, []) : {
         budget  = b
-        project = k
+        project = lookup(v, "name", k)
       }
     ]
   ])
@@ -33,7 +47,7 @@ locals {
     for v in local._project_budgets : v.budget => v.project...
   }
   projects = {
-    for k, v in local._projects : k => merge(v, {
+    for k, v in local._projects : lookup(v, "name", k) => merge(v, {
       billing_account = try(coalesce(
         var.data_overrides.billing_account,
         try(v.billing_account, null),
@@ -68,20 +82,18 @@ locals {
         try(v.service_encryption_key_ids, null),
         var.data_defaults.service_encryption_key_ids
       )
-      service_perimeter_bridges = coalesce(
-        var.data_overrides.service_perimeter_bridges,
-        try(v.service_perimeter_bridges, null),
-        var.data_defaults.service_perimeter_bridges
-      )
-      service_perimeter_standard = try(coalesce(
-        var.data_overrides.service_perimeter_standard,
-        try(v.service_perimeter_standard, null),
-        var.data_defaults.service_perimeter_standard
-      ), null)
       services = coalesce(
         var.data_overrides.services,
         try(v.services, null),
         var.data_defaults.services
+      )
+      shared_vpc_host_config = (
+        try(v.shared_vpc_host_config, null) != null
+        ? merge(
+          { service_projects = [] },
+          v.shared_vpc_host_config
+        )
+        : null
       )
       shared_vpc_service_config = (
         try(v.shared_vpc_service_config, null) != null
@@ -101,6 +113,18 @@ locals {
         var.data_overrides.tag_bindings,
         try(v.tag_bindings, null),
         var.data_defaults.tag_bindings
+      )
+      vpc_sc = (
+        var.data_overrides.vpc_sc != null
+        ? var.data_overrides.vpc_sc
+        : (
+          try(v.vpc_sc, null) != null
+          ? merge({
+            perimeter_bridges = []
+            is_dry_run        = false
+          }, v.vpc_sc)
+          : var.data_defaults.vpc_sc
+        )
       )
       # non-project resources
       service_accounts = try(v.service_accounts, {})

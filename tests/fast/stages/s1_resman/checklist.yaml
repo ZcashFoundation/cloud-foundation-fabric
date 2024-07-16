@@ -415,9 +415,9 @@ values:
     timeouts: null
 
 counts:
-  google_folder: 57
-  google_folder_iam_binding: 67
-  google_organization_iam_member: 5
+  google_folder: 56
+  google_folder_iam_binding: 69
+  google_organization_iam_member: 6
   google_project_iam_member: 4
   google_service_account: 4
   google_service_account_iam_binding: 4
@@ -425,8 +425,8 @@ counts:
   google_storage_bucket_iam_binding: 4
   google_storage_bucket_iam_member: 4
   google_storage_bucket_object: 5
-  google_tags_tag_binding: 5
-  google_tags_tag_key: 3
+  google_tags_tag_binding: 4
+  google_tags_tag_key: 2
   google_tags_tag_value: 9
-  modules: 64
+  modules: 63
   resources: 173

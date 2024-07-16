@@ -60,6 +60,23 @@ output "name" {
   ]
 }
 
+output "network_tag_keys" {
+  description = "Tag key resources."
+  value = {
+    for k, v in google_tags_tag_key.default : k => v if(
+      v.purpose != null && v.purpose != ""
+    )
+  }
+}
+
+output "network_tag_values" {
+  description = "Tag value resources."
+  value = {
+    for k, v in google_tags_tag_value.default :
+    k => v if local.tag_values[k].tag_network
+  }
+}
+
 output "number" {
   description = "Project number."
   value       = local.project.number
@@ -96,6 +113,22 @@ output "project_id" {
     google_project_service_identity.servicenetworking,
     google_project_iam_member.servicenetworking
   ]
+}
+
+output "quota_configs" {
+  description = "Quota configurations."
+  value = {
+    for k, v in google_cloud_quotas_quota_preference.default :
+    k => {
+      granted   = v.quota_config[0].granted_value
+      preferred = v.quota_config[0].preferred_value
+    }
+  }
+}
+
+output "quotas" {
+  description = "Quota resources."
+  value       = google_cloud_quotas_quota_preference.default
 }
 
 output "service_accounts" {

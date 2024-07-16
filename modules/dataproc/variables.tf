@@ -47,9 +47,9 @@ variable "dataproc_config" {
       }))
       master_config = optional(object({
         num_instances    = number
-        machine_type     = string
-        min_cpu_platform = string
-        image_uri        = string
+        machine_type     = optional(string)
+        min_cpu_platform = optional(string)
+        image_uri        = optional(string)
         disk_config = optional(object({
           boot_disk_type    = string
           boot_disk_size_gb = number
@@ -193,16 +193,6 @@ variable "name" {
   type        = string
 }
 
-variable "prefix" {
-  description = "Optional prefix used to generate project id and name."
-  type        = string
-  default     = null
-  validation {
-    condition     = var.prefix != ""
-    error_message = "Prefix cannot be empty, please use null instead."
-  }
-}
-
 variable "project_id" {
   description = "Project ID."
   type        = string
@@ -211,10 +201,4 @@ variable "project_id" {
 variable "region" {
   description = "Dataproc region."
   type        = string
-}
-
-variable "service_account" {
-  description = "Service account to set on the Dataproc cluster."
-  type        = string
-  default     = null
 }

@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+output "folders" {
+  description = "Folder ids."
+  value       = local.hierarchy
+}
+
 output "projects" {
   description = "Project module outputs."
   value       = module.projects

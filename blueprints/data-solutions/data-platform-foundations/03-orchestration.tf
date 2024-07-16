@@ -1,4 +1,4 @@
-# Copyright 2023 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -134,7 +134,7 @@ module "orch-vpc-firewall" {
   source     = "../../../modules/net-vpc-firewall"
   count      = local.use_shared_vpc ? 0 : 1
   project_id = module.orch-project.project_id
-  network    = module.orch-vpc.0.name
+  network    = module.orch-vpc[0].name
   default_rules_config = {
     admin_ranges = ["10.10.0.0/24"]
   }
@@ -146,7 +146,7 @@ module "orch-nat" {
   project_id     = module.orch-project.project_id
   name           = "${var.prefix}-orch"
   region         = var.region
-  router_network = module.orch-vpc.0.name
+  router_network = module.orch-vpc[0].name
 }
 
 module "orch-artifact-reg" {
@@ -155,6 +155,7 @@ module "orch-artifact-reg" {
   name        = "${var.prefix}-app-images"
   location    = var.region
   description = "Docker repository storing application images e.g. Dataflow, Cloud Run etc..."
+  format      = { docker = { standard = {} } }
 }
 
 module "orch-cs-df-template" {

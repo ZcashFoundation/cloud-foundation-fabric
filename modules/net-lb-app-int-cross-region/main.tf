@@ -28,8 +28,8 @@ locals {
   )
   fwd_rule_target = (
     var.protocol == "HTTPS"
-    ? google_compute_target_https_proxy.default.0.id
-    : google_compute_target_http_proxy.default.0.id
+    ? google_compute_target_https_proxy.default[0].id
+    : google_compute_target_http_proxy.default[0].id
   )
   neg_endpoints = {
     for v in local._neg_endpoints : (v.key) => v
@@ -117,7 +117,7 @@ resource "google_compute_network_endpoint_group" "default" {
   subnetwork = (
     each.value.type == "NON_GCP_PRIVATE_IP_PORT"
     ? null
-    : try(each.value.subnetwork, var.vpc_config.subnetworks[substr(each.value.zone, 0, length(each.value.zone) - 2)])
+    : coalesce(each.value.subnetwork, var.vpc_config.subnetworks[substr(each.value.zone, 0, length(each.value.zone) - 2)])
   )
 }
 

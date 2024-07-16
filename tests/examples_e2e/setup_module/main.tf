@@ -15,24 +15,40 @@
 locals {
   prefix = "${var.prefix}-${var.timestamp}${var.suffix}"
   jit_services = [
-    "storage.googleapis.com", # no permissions granted by default
+    "alloydb.googleapis.com",          # no permissions granted by default
+    "artifactregistry.googleapis.com", # roles/artifactregistry.serviceAgent
+    "storage.googleapis.com",          # no permissions granted by default
+    "sqladmin.googleapis.com",         # roles/cloudsql.serviceAgent
   ]
   services = [
     # trimmed down list of services, to be extended as needed
+    "alloydb.googleapis.com",
+    "analyticshub.googleapis.com",
     "apigee.googleapis.com",
+    "artifactregistry.googleapis.com",
+    "assuredworkloads.googleapis.com",
     "bigquery.googleapis.com",
     "cloudbuild.googleapis.com",
     "cloudfunctions.googleapis.com",
     "cloudkms.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "compute.googleapis.com",
+    "container.googleapis.com",
+    "dataform.googleapis.com",
+    "dataplex.googleapis.com",
+    "dataproc.googleapis.com",
     "dns.googleapis.com",
     "eventarc.googleapis.com",
     "iam.googleapis.com",
+    "logging.googleapis.com",
+    "monitoring.googleapis.com",
+    "networkconnectivity.googleapis.com",
+    "pubsub.googleapis.com",
     "run.googleapis.com",
     "secretmanager.googleapis.com",
     "servicenetworking.googleapis.com",
     "serviceusage.googleapis.com",
+    "sqladmin.googleapis.com",
     "stackdriver.googleapis.com",
     "storage-component.googleapis.com",
     "storage.googleapis.com",
@@ -57,6 +73,7 @@ resource "google_project_service" "project_service" {
   service                    = each.value
   project                    = google_project.project.project_id
   disable_dependent_services = true
+  disable_on_destroy         = false
 }
 
 resource "google_storage_bucket" "bucket" {
@@ -74,15 +91,26 @@ resource "google_compute_network" "network" {
   depends_on              = [google_project_service.project_service]
 }
 
-resource "google_compute_subnetwork" "subnetwork" {
-  ip_cidr_range = "10.0.16.0/24"
-  name          = "e2e-test-1"
-  network       = google_compute_network.network.name
-  project       = google_project.project.project_id
-  region        = var.region
+# Primary region networking
+
+resource "google_compute_subnetwork" "primary" {
+  ip_cidr_range            = "10.0.16.0/24"
+  name                     = "e2e-test-primary"
+  network                  = google_compute_network.network.name
+  project                  = google_project.project.project_id
+  private_ip_google_access = true
+  region                   = var.region
+  secondary_ip_range {
+    range_name    = "pods"
+    ip_cidr_range = "100.68.0.0/16"
+  }
+  secondary_ip_range {
+    range_name    = "services"
+    ip_cidr_range = "100.71.1.0/24"
+  }
 }
 
-resource "google_compute_subnetwork" "proxy_only_global" {
+resource "google_compute_subnetwork" "primary_proxy_only_global" {
   project       = google_project.project.project_id
   network       = google_compute_network.network.name
   name          = "proxy-global"
@@ -90,14 +118,9 @@ resource "google_compute_subnetwork" "proxy_only_global" {
   ip_cidr_range = "10.0.17.0/24"
   purpose       = "GLOBAL_MANAGED_PROXY"
   role          = "ACTIVE"
-  lifecycle {
-    # Until https://github.com/hashicorp/terraform-provider-google/issues/16804 is fixed
-    # ignore permadiff in ipv6_access_type for proxy_only subnets
-    ignore_changes = [ipv6_access_type]
-  }
 }
 
-resource "google_compute_subnetwork" "proxy_only_regional" {
+resource "google_compute_subnetwork" "primary_proxy_only_regional" {
   project       = google_project.project.project_id
   network       = google_compute_network.network.name
   name          = "proxy-regional"
@@ -105,13 +128,88 @@ resource "google_compute_subnetwork" "proxy_only_regional" {
   ip_cidr_range = "10.0.18.0/24"
   purpose       = "REGIONAL_MANAGED_PROXY"
   role          = "ACTIVE"
+}
 
-  lifecycle {
-    # Until https://github.com/hashicorp/terraform-provider-google/issues/16804 is fixed
-    # ignore permadiff in ipv6_access_type for proxy_only subnets
-    ignore_changes = [ipv6_access_type]
+resource "google_compute_subnetwork" "primary_psc" {
+  project       = google_project.project.project_id
+  network       = google_compute_network.network.name
+  name          = "psc-regional"
+  region        = var.region
+  ip_cidr_range = "10.0.19.0/24"
+  purpose       = "PRIVATE_SERVICE_CONNECT"
+}
+
+
+
+# Secondary region networking
+
+resource "google_compute_subnetwork" "secondary" {
+  ip_cidr_range            = "10.1.16.0/24"
+  name                     = "e2e-test-secondary"
+  network                  = google_compute_network.network.name
+  project                  = google_project.project.project_id
+  private_ip_google_access = true
+  region                   = var.region_secondary
+  secondary_ip_range {
+    range_name    = "pods"
+    ip_cidr_range = "100.69.0.0/16"
+  }
+  secondary_ip_range {
+    range_name    = "services"
+    ip_cidr_range = "100.72.1.0/24"
   }
 }
+
+resource "google_compute_subnetwork" "secondary_proxy_only_global" {
+  project       = google_project.project.project_id
+  network       = google_compute_network.network.name
+  name          = "proxy-global"
+  region        = var.region_secondary
+  ip_cidr_range = "10.1.17.0/24"
+  purpose       = "GLOBAL_MANAGED_PROXY"
+  role          = "ACTIVE"
+}
+
+resource "google_compute_subnetwork" "secondary_proxy_only_regional" {
+  project       = google_project.project.project_id
+  network       = google_compute_network.network.name
+  name          = "proxy-regional"
+  region        = var.region_secondary
+  ip_cidr_range = "10.1.18.0/24"
+  purpose       = "REGIONAL_MANAGED_PROXY"
+  role          = "ACTIVE"
+}
+
+resource "google_compute_subnetwork" "secondary_psc" {
+  project       = google_project.project.project_id
+  network       = google_compute_network.network.name
+  name          = "psc-regional"
+  region        = var.region_secondary
+  ip_cidr_range = "10.1.19.0/24"
+  purpose       = "PRIVATE_SERVICE_CONNECT"
+}
+
+
+### PSA ###
+
+resource "google_compute_global_address" "psa_ranges" {
+  project       = google_project.project.project_id
+  network       = google_compute_network.network.id
+  name          = "psa-range"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  address       = "10.0.20.0"
+  prefix_length = 22
+}
+
+resource "google_service_networking_connection" "psa_connection" {
+  network                 = google_compute_network.network.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.psa_ranges.name]
+  deletion_policy         = "ABANDON"
+}
+
+### END OF PSA
 
 resource "google_service_account" "service_account" {
   account_id = "e2e-service-account"
@@ -140,6 +238,19 @@ resource "google_project_service_identity" "jit_si" {
   depends_on = [google_project_service.project_service]
 }
 
+resource "google_project_iam_binding" "cloudsql_agent" {
+  members    = ["serviceAccount:service-${google_project.project.number}@gcp-sa-cloud-sql.iam.gserviceaccount.com"]
+  project    = google_project.project.project_id
+  role       = "roles/cloudsql.serviceAgent"
+  depends_on = [google_project_service_identity.jit_si]
+}
+
+resource "google_project_iam_binding" "artifactregistry_agent" {
+  members    = ["serviceAccount:service-${google_project.project.number}@gcp-sa-artifactregistry.iam.gserviceaccount.com"]
+  project    = google_project.project.project_id
+  role       = "roles/artifactregistry.serviceAgent"
+  depends_on = [google_project_service_identity.jit_si]
+}
 
 resource "local_file" "terraform_tfvars" {
   filename = "e2e_tests.tfvars"
@@ -148,21 +259,40 @@ resource "local_file" "terraform_tfvars" {
     billing_account_id = var.billing_account
     folder_id          = google_folder.folder.folder_id
     group_email        = var.group_email
-    kms_key_id         = google_kms_crypto_key.key.id
-    organization_id    = var.organization_id
-    project_id         = google_project.project.project_id
-    project_number     = google_project.project.number
-    region             = var.region
+    keyring = {
+      name = google_kms_key_ring.keyring.name
+    }
+    kms_key_id      = google_kms_crypto_key.key.id
+    organization_id = var.organization_id
+    project_id      = google_project.project.project_id
+    project_number  = google_project.project.number
+    region          = var.region
+    regions = {
+      primary   = var.region
+      secondary = var.region_secondary
+    }
     service_account = {
       id        = google_service_account.service_account.id
       email     = google_service_account.service_account.email
       iam_email = "serviceAccount:${google_service_account.service_account.email}"
     }
     subnet = {
-      name          = google_compute_subnetwork.subnetwork.name
-      region        = google_compute_subnetwork.subnetwork.region
-      ip_cidr_range = google_compute_subnetwork.subnetwork.ip_cidr_range
-      self_link     = google_compute_subnetwork.subnetwork.self_link
+      name          = google_compute_subnetwork.primary.name
+      region        = google_compute_subnetwork.primary.region
+      ip_cidr_range = google_compute_subnetwork.primary.ip_cidr_range
+      self_link     = google_compute_subnetwork.primary.self_link
+    }
+    subnet_secondary = {
+      name          = google_compute_subnetwork.secondary.name
+      region        = google_compute_subnetwork.secondary.region
+      ip_cidr_range = google_compute_subnetwork.secondary.ip_cidr_range
+      self_link     = google_compute_subnetwork.secondary.self_link
+    }
+    subnet_psc_1 = {
+      name          = google_compute_subnetwork.primary_psc.name
+      region        = google_compute_subnetwork.primary_psc.region
+      ip_cidr_range = google_compute_subnetwork.primary_psc.ip_cidr_range
+      self_link     = google_compute_subnetwork.primary_psc.self_link
     }
     vpc = {
       name      = google_compute_network.network.name

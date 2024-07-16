@@ -50,14 +50,7 @@ locals {
     var.org_policies_config.constraints.allowed_policy_member_domains
   )
   drs_tag_name = "${var.organization.id}/${var.org_policies_config.tag_name}"
-  fast_custom_roles = [
-    "organization_admin_viewer",
-    "organization_iam_admin",
-    "service_project_network_admin",
-    "storage_viewer",
-    "tag_viewer",
-    "tenant_network_admin",
-  ]
+
   # intermediate values before we merge in what comes from the checklist
   _iam_principals = {
     for k, v in local.iam_principal_bindings : k => v.authoritative
@@ -101,9 +94,6 @@ locals {
     flatten(values(local._iam_principals)),
     keys(local._iam)
   ))
-  iam_roles_additive = distinct([
-    for k, v in local._iam_bindings_additive : v.role
-  ])
 }
 
 # TODO: add a check block to ensure our custom roles exist in the factory files
@@ -114,33 +104,51 @@ import {
     !var.org_policies_config.import_defaults || var.bootstrap_user != null
     ? toset([])
     : toset([
-      "compute.requireOsLogin",
-      "compute.skipDefaultNetworkCreation",
-      "compute.vmExternalIpAccess",
-      "iam.allowedPolicyMemberDomains",
-      "iam.automaticIamGrantsForDefaultServiceAccounts",
+      # source: https://cloud.google.com/resource-manager/docs/secure-by-default-organizations#organization_policies_enforced_on_organization_resources
+      # listed in the order as on page
       "iam.disableServiceAccountKeyCreation",
       "iam.disableServiceAccountKeyUpload",
-      "sql.restrictAuthorizedNetworks",
-      "sql.restrictPublicIp",
+      "iam.automaticIamGrantsForDefaultServiceAccounts",
+      "iam.allowedPolicyMemberDomains",
+      "essentialcontacts.allowedContactDomains",
       "storage.uniformBucketLevelAccess",
       "compute.disableGuestAttributesAccess",
       "iam.allowServiceAccountCredentialLifetimeExtension",
       "compute.restrictLoadBalancerCreationForTypes",
       "run.allowedIngress",
+      # "compute.setNewProjectDefaultToZonalDNSOnly", # not confirmed, that this is already live
     ])
   )
   id = "organizations/${var.organization.id}/policies/${each.key}"
   to = module.organization.google_org_policy_policy.default[each.key]
 }
 
-module "organization" {
+module "organization-logging" {
+  # Preconfigure organization-wide logging settings to ensure project
+  # log buckets (_Default, _Required) are created in the location
+  # specified by `var.locations.logging`. This separate
+  # organization-block prevents circular dependencies with later
+  # project creation.
   source          = "../../../modules/organization"
   organization_id = "organizations/${var.organization.id}"
+  logging_settings = {
+    storage_location = var.locations.logging
+  }
+}
+
+module "organization" {
+  source          = "../../../modules/organization"
+  organization_id = module.organization-logging.id
   # human (groups) IAM bindings
   iam_by_principals = {
-    for k, v in local.iam_principals :
-    k => distinct(concat(v, lookup(var.iam_by_principals, k, [])))
+    for key in distinct(concat(
+      keys(local.iam_principals),
+      keys(var.iam_by_principals),
+    )) :
+    key => distinct(concat(
+      lookup(local.iam_principals, key, []),
+      lookup(var.iam_by_principals, key, []),
+    ))
   }
   # machine (service accounts) IAM bindings
   iam = merge(
@@ -167,6 +175,7 @@ module "organization" {
             "api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', []).hasOnly([%s])",
             join(",", formatlist("'%s'", [
               "roles/accesscontextmanager.policyAdmin",
+              "roles/cloudasset.viewer",
               "roles/compute.orgFirewallPolicyAdmin",
               "roles/compute.xpnAdmin",
               "roles/orgpolicy.policyAdmin",

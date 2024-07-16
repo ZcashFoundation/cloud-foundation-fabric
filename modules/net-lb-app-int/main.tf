@@ -28,8 +28,8 @@ locals {
   )
   fwd_rule_target = (
     var.protocol == "HTTPS"
-    ? google_compute_region_target_https_proxy.default.0.id
-    : google_compute_region_target_http_proxy.default.0.id
+    ? google_compute_region_target_https_proxy.default[0].id
+    : google_compute_region_target_http_proxy.default[0].id
   )
   neg_endpoints = {
     for v in local._neg_endpoints : (v.key) => v
@@ -108,13 +108,15 @@ resource "google_compute_region_target_http_proxy" "default" {
 }
 
 resource "google_compute_region_target_https_proxy" "default" {
-  count            = var.protocol == "HTTPS" ? 1 : 0
-  project          = var.project_id
-  region           = var.region
-  name             = var.name
-  description      = var.description
-  ssl_certificates = local.proxy_ssl_certificates
-  url_map          = google_compute_region_url_map.default.id
+  count                            = var.protocol == "HTTPS" ? 1 : 0
+  project                          = var.project_id
+  region                           = var.region
+  name                             = var.name
+  description                      = var.description
+  ssl_certificates                 = local.proxy_ssl_certificates
+  ssl_policy                       = var.https_proxy_config.ssl_policy
+  url_map                          = google_compute_region_url_map.default.id
+  certificate_manager_certificates = var.https_proxy_config.certificate_manager_certificates
 }
 
 resource "google_compute_service_attachment" "default" {
@@ -167,7 +169,7 @@ resource "google_compute_network_endpoint_group" "default" {
   subnetwork = (
     each.value.type == "NON_GCP_PRIVATE_IP_PORT"
     ? null
-    : try(each.value.subnetwork, var.vpc_config.subnetwork)
+    : coalesce(each.value.subnetwork, var.vpc_config.subnetwork)
   )
 }
 
@@ -213,4 +215,49 @@ resource "google_compute_region_network_endpoint_group" "psc" {
   psc_target_service    = each.value.psc.target_service
   network               = each.value.psc.network
   subnetwork            = each.value.psc.subnetwork
+}
+
+locals {
+  _neg_endpoints_internet = flatten([
+    for k, v in local.neg_internet : [
+      for kk, vv in v.internet.endpoints : merge(vv, {
+        key = "${k}-${kk}", neg = k, region = v.internet.region, use_fqdn = v.internet.use_fqdn
+      })
+    ]
+  ])
+  neg_endpoints_internet = {
+    for v in local._neg_endpoints_internet : (v.key) => v
+  }
+  neg_internet = {
+    for k, v in var.neg_configs :
+    k => v if v.internet != null
+  }
+}
+
+resource "google_compute_region_network_endpoint_group" "internet" {
+  for_each = local.neg_internet
+  project  = var.project_id
+  name     = "${var.name}-${each.key}"
+  region   = each.value.internet.region
+  # re-enable once provider properly supports this
+  # default_port = each.value.default_port
+  description = coalesce(each.value.description, var.description)
+  network_endpoint_type = (
+    each.value.internet.use_fqdn ? "INTERNET_FQDN_PORT" : "INTERNET_IP_PORT"
+  )
+  network = var.vpc_config.network
+}
+
+resource "google_compute_region_network_endpoint" "internet" {
+  for_each = local.neg_endpoints_internet
+  project = (
+    google_compute_region_network_endpoint_group.internet[each.value.neg].project
+  )
+  region = each.value.region
+  region_network_endpoint_group = (
+    google_compute_region_network_endpoint_group.internet[each.value.neg].name
+  )
+  fqdn       = each.value.use_fqdn ? each.value.destination : null
+  ip_address = each.value.use_fqdn ? null : each.value.destination
+  port       = each.value.port
 }

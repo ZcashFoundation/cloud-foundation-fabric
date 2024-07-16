@@ -1,4 +1,4 @@
-# Deploy a Redis cluster on GKE 
+# Deploy a Redis cluster on GKE
 
 
 ## Objectives
@@ -20,12 +20,21 @@ To get started, click Start.
 
 <walkthrough-project-setup billing="true"></walkthrough-project-setup>
 
+## Install Terraform 1.7.4+ version
+Install recent version of Terraform by executing following commands:
+
+```sh
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor --batch --yes -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update && sudo apt install terraform
+```
+
 ## Create the Autopilot GKE cluster
 
 1. Change to the ```autopilot-cluster``` directory.
 
     ```bash
-    cd autopilot-cluster 
+    cd autopilot-cluster
     ```
 
 2. Create a new file ```terraform.tfvars``` in that directory.
@@ -66,7 +75,7 @@ vpc_create = { }
 7. Fetch the cluster credentials.
 
     ```bash
-    gcloud container fleet memberships get-credentials cluster --project "<walkthrough-project-name/>"
+    gcloud container fleet memberships get-credentials gke-patterns-cluster --project "<walkthrough-project-name/>"
     ```
 
 8. Check the nodes are ready.
@@ -77,7 +86,7 @@ vpc_create = { }
 
 ## Install Redis and create associated resources
 
-1. Change to the ```patterns/batch``` directory.
+1. Change to the ```patterns/redis-cluster``` directory.
 
     ```bash
     cd ../redis-cluster
