@@ -1,9 +1,22 @@
+module "ecosystem_artifact_registry" {
+  source      = "../../../../modules/artifact-registry"
+  project_id  = "zfnd-dev-services"
+  location    = "us"
+  name          = "ecosystem-services"
+  description = "Docker repository storing our ecosystem services"
+  format     = { docker = { standard = {} } }
+  iam = {
+    "roles/artifactregistry.reader" = ["allUsers"]
+  }
+}
+
 module "kuma_artifact_registry" {
   source      = "../../../../modules/artifact-registry"
   project_id  = "zfnd-dev-services"
   location    = "us"
   name          = "uptime-kuma"
   description = "Docker repository storing our infrastructure monitoring tool"
+  format     = { docker = { standard = {} } }
   iam = {
     "roles/artifactregistry.reader" = ["allUsers"]
   }

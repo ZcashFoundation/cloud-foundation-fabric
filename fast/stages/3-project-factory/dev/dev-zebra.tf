@@ -4,6 +4,7 @@ module "zebra_caching_artifact_registry" {
   location    = "us"
   name          = "zebra"
   description = "Docker repository storing the Zebra application for testing purposes"
+  format     = { docker = { standard = {} } }
   iam = {
     "roles/artifactregistry.reader" = ["allUsers"]
   }
@@ -15,6 +16,7 @@ module "zebra_artifact_registry" {
   location    = "us"
   name          = "zebra-caching"
   description = "Docker repository storing Zebra's build layers for caching"
+  format     = { docker = { standard = {} } }
   iam = {
     "roles/artifactregistry.reader" = ["allUsers"]
   }
@@ -26,6 +28,7 @@ module "lwd_caching_artifact_registry" {
   location    = "us"
   name          = "lightwalletd"
   description = "Docker repository storing the Zebra application for testing purposes"
+  format     = { docker = { standard = {} } }
   iam = {
     "roles/artifactregistry.reader" = ["allUsers"]
   }
@@ -37,6 +40,7 @@ module "lwd_artifact_registry" {
   location    = "us"
   name          = "lightwalletd-caching"
   description = "Docker repository storing Zebra's build layers for caching"
+  format     = { docker = { standard = {} } }
   iam = {
     "roles/artifactregistry.reader" = ["allUsers"]
   }
